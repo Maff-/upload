@@ -18,6 +18,7 @@
  * @license       MIT License (http://www.opensource.org/licenses/mit-license.php)
  */
 App::uses('Folder', 'Utility');
+App::uses('Sanitize', 'Utility');
 class UploadBehavior extends ModelBehavior {
 
 	public $defaults = array(
@@ -285,7 +286,7 @@ class UploadBehavior extends ModelBehavior {
 			if ($model->hasField($options['fields']['dir'])) {
 				if ($created && $options['pathMethod'] == '_getPathFlat') {
 				} else if ($options['saveDir']) {
-					$temp[$model->alias][$options['fields']['dir']] = "\"{$tempPath}\"";
+					$temp[$model->alias][$options['fields']['dir']] = "'".Sanitize::escape($tempPath)."'";
 				}
 			}
 		}
@@ -1060,19 +1061,11 @@ class UploadBehavior extends ModelBehavior {
 	}
 
 	public function _getPathRandom(&$model, $field, $path) {
-		$endPath = null;
-		$decrement = 0;
-		$string = crc32($field . time());
-
-		for ($i = 0; $i < 3; $i++) {
-			$decrement = $decrement - 2;
-			$endPath .= sprintf("%02d" . DIRECTORY_SEPARATOR, substr('000000' . $string, $decrement, 2));
-		}
-
-		$destDir = $path . $endPath;
-		$this->_mkPath($destDir);
-
-		return substr($endPath, 0, -1);
+		$string = sprintf('%06u', crc32($field . time()));
+		$chunks = str_split($string, 2);
+		$endPath = implode(DIRECTORY_SEPARATOR, $chunks);
+		$this->_mkPath($path . $endPath . DIRECTORY_SEPARATOR);
+		return $endPath;
 	}
 
 	public function _mkPath($destDir) {
