@@ -278,7 +278,7 @@ class UploadBehavior extends ModelBehavior {
 			}
 			$tmp = $this->runtime[$model->alias][$field]['tmp_name'];
 			$filePath = $path . $model->data[$model->alias][$field];
-			if (!$this->handleUploadedFile($model->alias, $field, $tmp, $filePath)) {
+			if (!$this->handleUploadedFile($model, $field, $tmp, $filePath)) {
 				$model->invalidate($field, 'moveUploadedFile');
 			}
 
@@ -304,8 +304,12 @@ class UploadBehavior extends ModelBehavior {
 		return $result;
 	}
 
-	public function handleUploadedFile($modelAlias, $field, $tmp, $filePath) {
-		return !is_uploaded_file($tmp) || !@move_uploaded_file($tmp, $filePath);
+	public function handleUploadedFile(Model $model, $field, $tmp, $filePath) {
+		if (isset($model->skipIsUploadedCheck) ) {
+			return rename($tmp, $filePath);
+		} else {
+			return !is_uploaded_file($tmp) || !move_uploaded_file($tmp, $filePath);
+		}
 	}
 
 	public function unlink($file) {
